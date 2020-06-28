@@ -1,0 +1,149 @@
+//-------------------------------------------------------//
+// NC2DXF.mac -- NC2DXF User Interface macro             //
+// Ver0.43                                               //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Jan 15, 1999                                 //
+// Revised: May 25, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+$temp = getenv("temp");
+$hidden = hidemarudir + "\\hidden.exe";
+title "NC2DXF";
+disableinvert;
+disabledraw;
+
+// 現在のカーソル位置を記憶
+#x = x;
+#y = y;
+gofiletop;
+golineend;
+searchup "^T[0-9]+", casesense, regular;
+if (result == 0) searchdown "^T[0-9]+", casesense, regular;
+if (result == 0) {
+	message "Tコードが見つかりませんでした。";
+	goto end;
+}
+#i = 1;
+while (result == 1) {
+	$TCode[#i] = gettext(0, y, linelen2, y);
+	#i = #i + 1;
+	searchdown "^T[0-9]+", casesense, regular;
+}
+
+gofileend;
+searchup "G91";
+if (result == 1)
+	$DataType = "INC";
+else {
+	searchup "G90";
+	if (result == 1) $DataType = "ABS";
+}
+
+// カーソルを元の位置に戻す。
+moveto #x, #y;
+enabledraw;
+#ToolCount = #i - 1; // ツールの本数
+#i = 1;
+
+drill:
+while (#i <= #ToolCount) {
+	$buffer = input ($TCode[#i] + " のドリル径は？", $drill[#i]);
+	if (result == 0)
+		goto end;
+	else if ($buffer == "")
+		goto drill;
+	else if ($buffer == "B" || $buffer == "b") {
+		if (#i == 1)
+			goto drill;
+		else {
+			searchup "^T[0-9]+", casesense, regular;
+			$line = gettext(0, y, linelen2, y);
+			#i = #i - 1;
+			if (#i < 1) #i = 1;
+			goto drill;
+		}
+	} else if (ascii($buffer) < 48 || ascii($buffer) > 57) {
+		message "エラー → " + $buffer;
+		goto drill;
+	} else
+		$drill[#i] = $buffer;
+	#i = #i + 1;
+}
+if ($DataType != "") goto outfile;
+datatype:
+	title "NCデータ形式は？";
+	menu "INC", "ABS", "戻る";
+	if (result == 0)
+		goto end;
+	else if (result == 1)
+		$DataType = "INC";
+	else if (result == 2)
+		$DataType = "ABS";
+	else if (result == 3) {
+		#i = #i - 1;
+		if (#i < 1) #i = 1;
+		$DataType = ""; // Undoした時はINC/ABSを質問する様にする
+		goto drill;
+	}
+outfile:
+$buffer = input ("出力ファイル名は?", $outfilename);
+if (result == 0)
+	goto end;
+else if ($buffer == "")
+	goto outfile;
+else if ($buffer == "b" || $buffer == "B")
+	goto datatype;
+
+$outfilename = $buffer;
+$kakunin = "ツール\t" + "ドリル径\t\n";
+#j = 1;
+while (#j < #i) {
+	$kakunin = $kakunin + " " + $TCode[#j] + "\t " + $drill[#j] + "\n";
+	#j = #j + 1;
+}
+$kakunin = $kakunin + "\nABS/INC  " + $DataType + "\n出力ファイル名  " + $outfilename;
+question "以上でよろしいですか?\n\n" + $kakunin;
+if (result == no) goto outfile;
+
+// テンポラリファイルがあったら削除しておく
+#a = dllfunc("ENUMFILE", $temp + "\\nc2dxf.$$$");
+$file = dllfuncstr("FINDNEXT");
+if ($file != "")
+	#a = dllfunc("REMOVE", $temp + "\\nc2dxf.$$$");
+
+#handle1 = hidemaruhandle(0);
+openfile "/h " + $temp + "\\nc2dxf.$$$";
+#handle2 = hidemaruhandle(0);
+#j = 1;
+while (#j < #i) {
+	insert $TCode[#j] + "C";
+	insert $drill[#j];
+	insertreturn;
+	#j = #j + 1;
+}
+save;
+setactivehidemaru #handle1;
+closehidemaru #handle2;
+appendsave $temp + "\\nc2dxf.$$$";
+title "DXF変換中．．．";
+runsync2 $hidden + " nc2dxf.bat " + $temp + "\\nc2dxf.$$$ " + $DataType + " " + directory + "\\" + $outfilename;
+#a = dllfunc("REMOVE", $temp + "\\nc2dxf.$$$"); // nc2dxf.$$$を削除する
+freedll;
+exit;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	title 0;
+	freedll;
+	endmacro;

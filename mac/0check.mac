@@ -1,0 +1,70 @@
+//-------------------------------------------------------//
+// 0Check.mac -- NC Data 0-Check Macro                   //
+// Ver0.32                                               //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 03, 1999                                 //
+// Revised: May 28, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+if (basename=="dpunch.tmp") {
+	message "（－_－；）";
+	endmacro;
+} else if (basename=="0check.tmp") {
+	message "（－_－；）";
+	endmacro;
+}
+
+title "計算中．．．";
+$hidden = hidemarudir + "\\hidden.exe";
+$0ChkCmd = $hidden + " ruby c:\\usr\\local\\share\\ruby\\0chk.rb";
+$tmp=getenv("temp")+"\\0check.tmp";
+
+// テンポラリファイルがあったら削除しておく
+#a = dllfunc("ENUMFILE", $tmp);
+$file = dllfuncstr("FINDNEXT");
+if ($file != "") #a = dllfunc("REMOVE", $tmp);
+
+if (updated == 1) save;
+// 範囲指定されていない場合は、File全体を、
+// 範囲指定されている場合は、指定されている部分を0チェックの対象とする。
+if (selecting == 0)
+	runsync2 $0ChkCmd + " " + filename2 + " > " + $tmp;
+else {
+	$nc = getenv("temp") + "\\0check.$nc";
+	copy;
+	#handle1 = hidemaruhandle(0);
+	openfile "/h " + $nc;
+	#handle2 = hidemaruhandle(0);
+	paste;
+	config "m-";
+	save;
+	setactivehidemaru #handle1;
+	closehidemaru #handle2;
+	runsync2 $0ChkCmd + " " + $nc + " > " + $tmp;
+	#a = dllfunc("REMOVE", $nc);
+}
+title 0;
+readonlyopenfile $tmp;
+browsemodeswitch;
+config "y+";
+loadhilight "0check.hilight", 0;
+searchdown "G25";
+if (!result)
+	gofileend;
+else {
+	up;
+	split;
+	splitswitch;
+	searchdown "M02";
+	up 4;
+}
+freedll;

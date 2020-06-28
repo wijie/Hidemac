@@ -1,0 +1,107 @@
+//-------------------------------------------------------//
+// X/Y 補完マクロ -- addXY.mac                           //
+// Ver0.11                                               //
+//                                                       //
+// Author: WATABE Eiji                                   //
+// Created: Oct 18, 1999                                 //
+// Revised: May 24, 2001                                 //
+//-------------------------------------------------------//
+
+// 現在のカーソル位置を記憶
+#x = x;
+#y = y;
+disabledraw;
+gofileend;
+#Total = lineno;
+searchup "G91";
+if (result == 1)
+	goto INC;
+else {
+	searchup "G90";
+	if (result == 1) goto ABS;
+}
+gofiletop;
+mousemenu "INC", "ABS";
+	if (result == 0)
+		endmacro;
+	else if (result == 1)
+		goto INC;
+	else if (result == 2)
+		goto ABS;
+
+//-------------------------------------------------------//
+// INCの時の処理                                         //
+//-------------------------------------------------------//
+INC:
+title "処理中．．．0 %";
+#Parsent = 1;
+while (#Total > lineno) {
+	if ((lineno * 100 / #Total) > #Parsent) {
+		title "処理中．．．" + str(#Parsent) + " %";
+		#Parsent = #Parsent + 1;
+	}
+	$buffer = gettext(0, y, linelen2, y);
+	if (strstr($buffer, "X") == -1 && strstr($buffer, "Y") == 0) {
+		golinetop;
+		insertfix "X0";
+	} else if (strstr($buffer, "X") == 0 && strstr($buffer, "Y") == -1) {
+		golineend;
+		insertfix "Y0";
+	}
+	golinetop;
+	down;
+}
+title "処理中．．．100 %";
+save;
+moveto #x, #y; // カーソルを元の位置に戻す
+enabledraw;
+endmacro;
+
+//-------------------------------------------------------//
+// ABSの時の処理                                         //
+//-------------------------------------------------------//
+ABS:
+title "処理中．．．0 %";
+#Parsent = 1;
+$x = "X0";
+$y = "Y0";
+while (#Total > lineno) {
+	if ((lineno * 100 / #Total) > #Parsent) {
+		title "処理中．．．" + str(#Parsent) + " %";
+		#Parsent = #Parsent + 1;
+	}
+	$buffer = gettext(0, y, linelen2, y);
+	if (strstr($buffer, "X") == 0 && strstr($buffer, "Y") > 0) {
+		call getx $buffer, strstr($buffer, "X"), strstr($buffer, "Y");
+		call gety $buffer, strstr($buffer, "Y");
+	} else if (strstr($buffer, "X") == -1 && strstr($buffer, "Y") == 0) {
+		golinetop;
+		insertfix $x;
+		call gety $buffer, strstr($buffer, "Y");
+	} else if (strstr($buffer, "X") == 0 && strstr($buffer, "Y") == -1) {
+		golineend;
+		insertfix $y;
+		call getx $buffer, strstr($buffer, "X"), linelen2;
+	}
+	golinetop;
+	down;
+}
+title "処理中．．．100 %";
+save;
+moveto #x, #y; // カーソルを元の位置に戻す
+enabledraw;
+endmacro;
+
+//-------------------------------------------------------//
+// Xの数値を取得する                                     //
+//-------------------------------------------------------//
+getx:
+	$x = midstr($$1, ##2, ##3 - ##2);
+	return;
+
+//-------------------------------------------------------//
+// Yの数値を取得する                                     //
+//-------------------------------------------------------//
+gety:
+	$y = midstr($$1, ##2, strlen($$1));
+	return;

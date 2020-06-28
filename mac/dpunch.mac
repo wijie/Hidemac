@@ -1,0 +1,54 @@
+//-------------------------------------------------------//
+// DPunch.mac -- NC Data Direct-Punch Macro Ver0.31      //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 26, 1999                                 //
+// Revised: Apr 30, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+if (basename == "dpunch.tmp") {
+	message "（－_－；）";
+	endmacro;
+} else if (basename == "0check.tmp") {
+	message "（－_－；）";
+	endmacro;
+}
+
+title "確認中．．．";
+$hidden = hidemarudir + "\\hidden.exe";
+$DPCmd = $hidden + " c:\\cygwin\\bin\\gawk -f dpunch.awk";
+$tmp = getenv("temp") + "\\DPunch.tmp";
+
+// テンポラリファイルがあったら削除しておく
+#a = dllfunc("ENUMFILE", $tmp);
+$file = dllfuncstr("FINDNEXT");
+if ($file != "")
+	#a = dllfunc("REMOVE", $tmp);
+
+if (updated == 1) save;
+runsync2 $DPCmd + " " + filename2 + " > " + $tmp;
+title 0;
+readonlyopenfile $tmp;
+#handle = hidemaruhandle(0);
+config "y+";
+loadhilight "dpunch.hilight", 0;
+searchdown "^---", regular;
+if (result == 1) {
+	up;
+	tagjump;
+	while (1) {
+		setactivehidemaru #handle;
+		if (basename == "dpunch.tmp") break;
+	}
+} else
+	browsemodeswitch;
+
+freedll;

@@ -1,0 +1,22 @@
+//-------------------------------------------------------//
+// CCount.mac -- Charactor Counter                       //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Jul.04.2000                                  //
+// Revised: Jul.04.2000                                  //
+//-------------------------------------------------------//
+
+disabledraw;
+// 現在のカーソル位置を記憶。
+#x = x;
+#y = y;
+gofiletop;
+golinetop;
+#i = 0;
+while (1) {
+	right;
+	if (!result) break;
+	if (x > 0) #i = #i + 1;
+}
+moveto #x, #y;
+message str(#i) + "文字";

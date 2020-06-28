@@ -1,0 +1,159 @@
+//-------------------------------------------------------//
+// 長穴作成マクロ -- longhole.mac                        //
+// Ver0.53                                               //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Oct 21, 1999                                 //
+// Revised: Apr 30, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll (hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLLをロードできませんでした。";
+	goto end;
+}
+
+$tmp = getenv("temp");
+$tmpfile = $tmp + "\\longhole.$$$";
+$cfgfile = $tmp + "\\longhole.cfg";
+$hidden = hidemarudir + "\\hidden.exe";
+#i = 1;
+
+roop1:
+$msg1 = "長穴 " + str(#i) + "ヶ所目\n\n始点は? (Enterのみで終了)";
+$keyin = input($msg1, $start[#i]);
+if (result == 0) goto end;
+call inputchk $keyin;
+if (##return == -1)
+	goto roop1;
+else if (##return == -2) {
+	#i = #i - 1;
+	if (#i > 0)
+		goto roop2;
+	else {
+		message "これ以上戻れません。";
+		#i = 1;
+		goto roop1;
+	}
+} else if (##return == 0) {
+	if (#i == 1)
+		goto end;
+	else
+		goto execute;
+} else {
+	$start[#i] = $keyin;
+roop2:
+	$msg2 = "長穴 " + str(#i) + "ヶ所目\n\n終点は? (Enterのみで終了)";
+	$keyin = input($msg2, $end[#i]);
+	if (result == 0) goto end;
+	if ($start[#i] == $keyin) {
+		message "始点と終点が同じです。";
+		goto roop2;
+	}
+	call inputchk $keyin;
+	if (##return == -1)
+		goto roop2;
+	else if (##return == -2)
+		goto roop1;
+	else if (##return == 0)
+		goto execute;
+	else
+		$end[#i] = $keyin;
+	#i = #i + 1;
+	goto roop1;
+}
+
+execute:
+$pitch = input("ピッチは何mm以下に設定しますか？", "0.5");
+if (result == 0) goto end;
+call pitchchk $pitch;
+if (##return == -1)
+	goto execute;
+else if (##return == -2) {
+	#i = #i - 1;
+	goto roop2;
+}
+while (##j <= #i) {
+	if ($start[##j] != "" && $end[##j] != "")
+		$point = $point + $start[##j] + "," + $end[##j] + "\n";
+	##j = ##j + 1;
+}
+#handle1 = hidemaruhandle(0);
+openfile "/h " + $cfgfile;
+#handle2 = hidemaruhandle(0);
+selectall;
+insert "pitch " + $pitch + "\n";
+insert $point;
+save;
+setactivehidemaru #handle1;
+closehidemaru #handle2;
+runsync2 $hidden + " gawk -f longhole.awk " + $cfgfile + " > " + $tmpfile;
+golinetop;
+insertfile $tmpfile;
+save;
+if (!dllfunc("REMOVE", "/f " + $tmp + "\\longhole.*")) {
+	message "テンポラリの削除に失敗しました";
+}
+goto end;
+
+//-------------------------------------------------------//
+// 入力された座標をチェックする                          //
+//-------------------------------------------------------//
+inputchk:
+	if ($$1 == "")
+		return 0;
+	else if ($$1 == "b" || $$1 == "B")
+		return -2;
+	#a = strstr($$1, ",");
+	$$x = leftstr($$1, #a);
+	$$y = rightstr($$1, strlen($$1) - #a - 1);
+	##x = strstr($$x, "@");
+	##y = strstr($$y, "@");
+	if (#a == -1)
+		message "入力エラーです。→" + $$1;
+	if (##x > 0) {
+		message "入力エラーです。→" + $$x;
+		return -1;
+	} else {
+		$$x = rightstr($$x, strlen($$x) - (##x + 1));
+		if (val($$x) * 100 == 0 && ascii($$x) != 48) { // 48は"0"の文字コード
+			message "入力エラーです。→" + $$x;
+			return -1;
+		}
+	}
+	if (##y > 0) {
+		message "入力エラーです。→" + $$y;
+		return -1;
+	} else {
+		$$y = rightstr($$y, strlen($$y) - (##y + 1));
+		if (val($$y) * 100 == 0 && ascii($$y) != 48) { // 48は"0"の文字コード
+			message "入力エラーです。→" + $$y;
+			return -1;
+		}
+	}
+return #a;
+
+//-------------------------------------------------------//
+// 入力されたピッチをチェックする                        //
+//-------------------------------------------------------//
+pitchchk:
+	if ($$1 == "b" || $$1 == "B")
+		return -2;
+	else if ($$1 == "0") {
+		message "0は指定できません。";
+		return -1;
+	// 入力文字の先頭が0～9以外の時エラーにする。
+	} else if (ascii($$1) < 48 || ascii($$1) > 57) {
+		message "数値が無効です。 → " + $$1;
+		return -1;
+	} else
+		return 1;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	freedll;
+	endmacro;

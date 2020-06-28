@@ -1,0 +1,33 @@
+//-------------------------------------------------------//
+// add.mac -- ADD NCデータ変換                           //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Jun 23, 2000                                 //
+// Revised: May 10, 2001                                 //
+//-------------------------------------------------------//
+
+title "変換中．．．";
+disableinvert;
+disabledraw;
+gofiletop;
+golineend;
+
+searchup "^T[0-9]+", regular;
+if (result == 0) searchdown "^T[0-9]+", regular;
+if (result == 0) {
+	message "Tコードが見つかりませんでした。";
+	goto end;
+}
+#i = 1;
+while (result == true) {
+	if (#i > 1) insert "G80\nX0Y0\n";
+	down;
+	$Line = gettext(0, y, linelen2, y);
+	if ($Line != "G81") insert "G81\n";
+	golineend;
+	#i = #i + 1;
+	searchdown "^T[0-9]+", regular;
+}
+searchdown "^M(02|30)$", regular;
+insert "G80\nX0Y0\n";
+save;

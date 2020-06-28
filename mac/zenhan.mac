@@ -1,0 +1,7 @@
+gofiletop;
+searchdown "[Å@ÇO-ÇXÇ`-ÇyÇÅ-Çö]", regular;
+while (result == true) {
+	selectword;
+	tohankaku;
+	searchdown "[Å@ÇO-ÇXÇ`-ÇyÇÅ-Çö]", regular;
+}

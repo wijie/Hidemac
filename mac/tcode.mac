@@ -1,0 +1,133 @@
+//-------------------------------------------------------//
+// TCode.mac -- T-Code Change Macro                      //
+// Ver0.43                                               //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 10, 1999                                 //
+// Revised: Apr 25, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+// 現在のカーソル位置を記憶
+#x = x;
+#y = y;
+title "Tコード変更中．．． (戻る時は \"B\" です)";
+#i = 1;
+#j = 1;
+disabledraw;
+gofiletop;
+golineend;
+
+// Tコードを検索し、Tコードと行番号を配列にする。
+searchup "^T[0-9]+$", regular;
+if (result == 0) searchdown "^T[0-9]+$", regular;
+if (result == 0) {
+	message "Tコードが見つかりませんでした。";
+	goto end;
+}
+while (result == true) {
+	#Line[#i] = lineno; // 行番号
+	$Orig[#i] = gettext(0, y, linelen2, y); // 変更前のTコード
+	$After[#i] = $Orig[#i]; // 変更後のTコード
+	#i = #i+1;
+	golineend;
+	searchdown "^T[0-9]+$", regular;
+}
+// カーソルを元の位置に戻す
+moveto #x, #y;
+
+// Tコードを変更するか問い合わせる。
+Tool_Input:
+while (#j < #i) {
+	if ($After[#j] == "") $After[#j] = $Orig[#j];
+	$Buffer = input($Orig[#j] + " は?", $After[#j]);
+	if (result == false) goto end;
+	$Buffer = dllfuncstr("TOUPPER", $Buffer); // 大文字に変換
+	call Input_Check $Buffer;
+	if ($$return == "")
+		continue;
+	else if ($$return == "b") {
+		#j = #j-1;
+		if (#j <= 0) #j = 1;
+		continue;
+	} else {
+		$After[#j] = $Buffer;
+		question "面付しますか？";
+		if (result == yes)
+			$Array[#j] = "する";
+		else
+			$Array[#j] = "しない";
+	}
+	#j = #j+1;
+}
+
+#k = 1;
+$Kakunin = "変更前\t   変更後  面付け\n\n";
+while (#k < #i) {
+	$Kakunin = $Kakunin + " " + $Orig[#k] + "\t→  " + $After[#k] + "\t   " + $Array[#k] + "\n";
+	#k = #k+1;
+}
+question "これでよろしいですか？\n\n" + $Kakunin;
+if (result == yes) {
+	#j = 1;
+	while (#j < #i) {
+		movetolineno 1, #Line[#j];
+		if ($Array[#j] ==  "する")
+			overwrite $After[#j];
+		else
+			overwrite "*" + $After[#j];
+		deleteafter;
+		#j = #j+1;
+	}
+} else {
+	#j = #j-1;
+	if (#j <= 0) #j = 1;
+	goto Tool_Input;
+}
+
+// カーソルを元の位置に戻す
+moveto #x, #y;
+enabledraw;
+question "セーブしますか？";
+if (result == yes) {
+	saveas filename2, sjis;
+	exit;
+}
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	enabledraw;
+	title 0;
+	freedll;
+	endmacro;
+
+//-------------------------------------------------------//
+// 入力されたTコードが正しい形式かチェックする           //
+//-------------------------------------------------------//
+Input_Check:
+	##i = 1;
+	if ($$1 == "B")
+		return "b";
+	else if (strlen($$1) > 1 && (leftstr($$1, 1) == "T")) {
+		while (##i < strlen($$1)) {
+			$Input = midstr($$1, ##i, 1);
+			if (val($Input) < 0) {
+				message "Tコードが不正です。 → " + $$1;
+				return "";
+			}
+			##i = ##i + 1;
+		}
+		return $$1;
+	} else {
+		message "T○○と入力して下さい。";
+		return "";
+	}

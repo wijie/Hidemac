@@ -1,0 +1,53 @@
+//-------------------------------------------------------//
+// AMS NCデータ変換 -- ams.mac Ver0.11                   //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Oct 19, 1999                                 //
+// Revised: Apr 06, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll (hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLLをロードできませんでした。";
+	goto end;
+}
+
+title "変換中．．．";
+$tmp = getenv("temp") + "\\ams.$$$";
+$hidden = hidemarudir + "\\hidden.exe";
+if (updated == 1) save;
+disableinvert;
+disabledraw;
+gofileend;
+searchup "G9[01]", regular;
+if (result == 0) {
+	mousemenu "ABS", "INC";
+	if (result == 0) goto end;
+	else if(result == 1) {
+		moveto 0, 0;
+		insert "G90\n";
+		save;
+	} else if(result == 2) {
+		moveto 0, 0;
+		insert "G91\n";
+		save;
+	}
+}
+runsync2 $hidden + " gawk -f ams.awk " + filename2 + " > " + $tmp;
+selectall;
+delete;
+insertfile $tmp;
+gofiletop;
+if (!dllfunc("REMOVE", "/f " + $tmp)) {
+	message "テンポラリの削除に失敗しました";
+}
+goto end;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	freedll;
+	endmacro;

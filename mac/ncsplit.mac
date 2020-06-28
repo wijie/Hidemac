@@ -1,0 +1,51 @@
+//-------------------------------------------------------//
+// DPunch.mac -- NC Data 分割/合成 Macro Ver0.31         //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 26, 1999                                 //
+// Revised: Mar 23, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+$hidden = hidemarudir + "\\hidden.exe";
+$NCSplitCmd = $hidden + " gawk -f ncsplit.awk";
+$NCMargeCmd = $hidden + " gawk -f ncmarge.awk";
+$tmp = getenv("temp") + "\\NCSplit.tmp";
+
+// テンポラリファイルがあったら削除しておく
+#a = dllfunc("ENUMFILE", $tmp);
+$file = dllfuncstr("FINDNEXT");
+if ($file != "") #a = dllfunc("REMOVE", $tmp);
+
+if (updated == 1) save;
+menu "分割", "合成";
+if (result == 0)
+	goto end;
+else if (result == 1) {
+	title "分割中．．．";
+	runsync2 $NCSplitCmd + " " + filename2 + " " + filename2 + " > " + $tmp;
+} else if (result == 2) {
+	title "合成中．．．";
+	runsync2 $NCMargeCmd + " " + filename2 + " > " + $tmp;
+}
+disableinvert;
+disabledraw;
+selectall;
+delete;
+insertfile $tmp;
+save;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	title 0;
+	freedll;
+	endmacro;

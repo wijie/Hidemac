@@ -1,0 +1,107 @@
+//-------------------------------------------------------//
+// wrapper.mac -- NC Macro Menu                          //
+// Ver0.1                                                //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: May 23, 2001                                 //
+// Revised: May 23, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+// メインメニュー
+if (dllfunc("NEWMENU", "main") == 0 ||
+	dllfunc("ADDMENUITEM", "", "面付け", "NCArray") == 0 ||
+	dllfunc("ADDMENUITEM", "", "確認", "NCCheck") == 0 ||
+	dllfunc("ADDMENUITEM", "", "編集", "NCEdit") == 0 ||
+	dllfunc("ADDMENUITEM", "", "変換", "NCConvert") == 0 ||
+	dllfunc("ADDMENUITEM", "", "", "") == 0 || // セパレータ
+	dllfunc("ADDMENUITEM", "", "終了", "") == 0) {
+	message "main メニューの作成に失敗しました。";
+	goto end;
+}
+
+// 面付けのサブメニュー
+if (dllfunc("NEWMENU", "NCArray") == 0 ||
+	dllfunc("ADDMENUITEM", "", "Tコード変更", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "面付け", "") == 0) {
+	message "comdlg メニューの作成に失敗しました。";
+	goto end;
+}
+
+// 確認のサブメニュー
+if (dllfunc("NEWMENU", "NCCheck") == 0 ||
+	dllfunc("ADDMENUITEM", "", "0チェック", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "ダイレクトパンチチェック", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "NCView", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "穴数", "") == 0) {
+	message "comdlg メニューの作成に失敗しました。";
+	goto end;
+}
+
+// 編集のサブメニュー
+if (dllfunc("NEWMENU", "NCEdit") == 0 ||
+	dllfunc("ADDMENUITEM", "", "長穴作成", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "花文字作成", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "分割/合成", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "X/Y補完", "") == 0) {
+	message "dialog メニューの作成に失敗しました。";
+	goto end;
+}
+
+// 変換のサブメニュー
+if (dllfunc("NEWMENU", "NCConvert") == 0 ||
+	dllfunc("ADDMENUITEM", "", "ABS, INC, etc...", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "DXFに変換", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "M05/M07 → CRﾋｯﾄ", "") == 0 ||
+	dllfunc("ADDMENUITEM", "", "改行コード", "") == 0) {
+	message "dialog メニューの作成に失敗しました。";
+	goto end;
+}
+// メニューの表示（現在のカーソル位置に表示）
+$item = dllfuncstr("MENU", "main", hidemaruhandle(0));
+// メニューの表示（現在のマウスカーソル位置に表示）
+//$item = dllfuncstr("MENU", "main", 0);
+
+if ($item == "!") goto end;
+else if ($item == "0" || $item == "main:6") goto end; // マクロの終了
+else if (leftstr($item, 7) == "NCArray") {
+	// NC面付け
+	##i = val(midstr($item, 8, 2));
+	if (##i == 1) execmacro "tcode.mac";
+	else if (##i == 2) execmacro "ncarray.mac";
+} else if (leftstr($item, 7) == "NCCheck") {
+	// NC確認
+	##i = val(midstr($item, 8, 2));
+	if (##i == 1) execmacro "0check.mac";
+	else if (##i == 2) execmacro "dpunch.mac";
+	else if (##i == 3) execmacro "ncview.mac";
+	else if (##i == 4) execmacro "ncc.mac";
+} else if (leftstr($item, 6) == "NCEdit") {
+	// NC編集
+	##i = val(midstr($item, 7, 2));
+	if (##i == 1) execmacro "longhole.mac";
+	else if (##i == 2) execmacro "moji.mac";
+	else if (##i == 3) execmacro "ncsplit.mac";
+	else if (##i == 4) execmacro "addxy.mac";
+} else if (leftstr($item, 9) == "NCConvert") {
+	// NC変換
+	##i = val(midstr($item, 10, 2));
+	if (##i == 1) execmacro "ncconv.mac";
+	else if (##i == 2) execmacro "nc2dxf.mac";
+	else if (##i == 3) execmacro "m05_g81.mac";
+	else if (##i == 4) execmacro "unix2dos.mac";
+}
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	freedll;
+	endmacro;

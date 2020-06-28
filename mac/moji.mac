@@ -1,0 +1,126 @@
+//-------------------------------------------------------//
+// moji.mac -- 花文字作成マクロ Ver0.21                  //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 19, 1999                                 //
+// Revised: May 23, 2001                                 //
+//-------------------------------------------------------//
+
+// 花文字データファイルの設定
+$moji_data = macrodir + "\\moji.dat";
+
+// 田楽DLLのロード
+freedll;
+loaddll(hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+title "花文字作成中．．．";
+golinetop;
+while ($moji == "") {
+	$moji = input("花文字は?");
+        $moji = dllfuncstr("TOUPPER", $moji); // 大文字に変換
+	if (result == false)
+		goto end;
+	else if ($moji == "")
+		message "花文字を入力して下さい。";
+}
+while ($idou == "") {
+	$idou = input("移動量は?", "X0Y7000");
+	$idou = dllfuncstr("TOUPPER", $idou); // 大文字に変換
+	if (result == false)
+		goto end;
+	else if ($idou == "")
+		message "移動量を入力して下さい。";
+}
+
+menu "縦に入れる", "横に入れる";
+if (result == 0)
+	goto end;
+else if (result == 1)
+	$muki = "tate";
+else if (result == 2)
+	$muki = "yoko";
+
+inputpos "カーソルを挿入位置に移動して、Enterキーを押して下さい。";
+if (result == false) goto end;
+
+golinetop;
+$nc = basename2;
+#handle1 = hidemaruhandle(0);
+// Windows2000で存在しているファイルをopenfile " /h"で開くと
+// エラーになる時があるので2段階に分けてopenfileする
+openfile "/h";
+openfile $moji_data;
+#handle2 = hidemaruhandle(0);
+#i = 0;
+while (strlen($moji) - #i > 0) {
+	$str = midstr($moji, #i, 1);
+	call charcut $str;
+	#i = #i + 1;
+	if (#i < strlen($moji))
+		if ($muki == "tate")
+			addclipboard "X0Y-1000\x0D\x0A";
+		else
+			addclipboard "X800Y0\x0D\x0A";
+}
+setactivehidemaru #handle1;
+closehidemaru #handle2;
+insert $idou + "\n";
+paste;
+if (strlen($moji) > 1) {
+	if ($muki == "tate")
+		insert "X0Y" + str((#i - 1) * 1000) + "\n";
+	else
+		insert "X-" + str((#i - 1) * 800) + "Y0\n";
+}
+
+// 移動量を"XY"を区切り文字にして分割
+$token = dllfuncstr("GETTOKEN", $idou, "XY");
+// 戻りの移動量X
+$token = dllfuncstr("GETTOKEN", "", "XY");
+insert "X" + str(val($token) * (-1));
+// 戻りの移動量Y
+$token = dllfuncstr("GETTOKEN", "", "XY");
+insert "Y" + str(val($token) * (-1)) + "\n";
+
+call rep " ", 40;
+insert $$return + "\n";
+save;
+goto end;
+
+//-------------------------------------------------------//
+// mojix.datからNCデータを切り取りクリップボードにコピー //
+//-------------------------------------------------------//
+charcut:
+	gofiletop;
+	searchdown "^" + $$1 + ",$", regular;
+	down;
+	beginsel;
+	searchdown "^;$", regular;
+	if (result == 0) gofileend;
+	if (#i == 0)
+		copy;
+	else
+		appendcopy;
+	return;
+
+//-------------------------------------------------------//
+// stringsをn個返す                                      //
+//-------------------------------------------------------//
+rep:
+	while(##2 > 0) {
+		$$str = $$str + $$1;
+		##2 = ##2 - 1;
+	}
+	return $$str;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	title 0;
+	freedll;
+	endmacro;

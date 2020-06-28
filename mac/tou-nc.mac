@@ -1,0 +1,193 @@
+//-------------------------------------------------------//
+// TOU クーポン作成 -- tou-nc.mac Ver0.1                 //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Nov 16, 2000                                 //
+// Revised: Nov 16, 2000                                 //
+//-------------------------------------------------------//
+
+// 導通クーポンの作成
+title "導通クーポンの作成";
+while ($coupon == "") {
+	$coupon = input("導通クーポンのTコードは? (数字だけ)");
+	if (result == false)
+		goto end;
+	else if ($coupon == "")
+		message "Tコードを入力して下さい。";
+}
+disabledraw;
+gofiletop;
+golineend;
+searchup "^T[0-9]+", regular;
+if (result == 0) searchdown "^T[0-9]+", regular;
+if (result == 0) {
+	message "Tコードが見つかりませんでした。";
+	goto end;
+}
+while (result == true) {
+	$tcode = gettext(0, y, linelen2, y);
+	#number = val(midstr($tcode, 1, strlen($tcode)));
+	if (#number == val($coupon)) break;
+	searchdown "^T[0-9]+", regular;
+}
+enabledraw;
+inputpos "カーソルを挿入位置に移動して、Enterキーを押して下さい。";
+disabledraw;
+if (result == false)
+	goto end;
+else
+	call tou_coupon;
+enabledraw;
+
+// インピーダンスクーポンの作成
+title "インピーダンスクーポンの作成";
+while ($znc == "") {
+	$znc = input("ZクーポンのTコードは? (数字だけ)");
+	if (result == false)
+		goto end;
+	else if ($znc == "")
+		message "Tコードを入力して下さい。";
+}
+disabledraw;
+gofiletop;
+golineend;
+searchup "^T[0-9]+", regular;
+if (result == 0) searchdown "^T[0-9]+", regular;
+if (result == 0) {
+	message "Tコードが見つかりませんでした。";
+	goto end;
+}
+while (result == true) {
+	$tcode = gettext(0, y, linelen2, y);
+	#number = val(midstr($tcode, 1, strlen($tcode)));
+	if (#number == val($znc)) break;
+	searchdown "^T[0-9]+", regular;
+}
+enabledraw;
+inputpos "カーソルを挿入位置に移動して、Enterキーを押して下さい。";
+disabledraw;
+if (result == false)
+	goto end;
+else
+	call tou_znc;
+endmacro;
+
+//-------------------------------------------------------//
+// 導通クーポン                                          //
+//-------------------------------------------------------//
+tou_coupon:
+insert "G81\n";
+insert "X22621Y-15145\n";
+call rep "X-127Y0\n", 4;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 19;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 18;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 5;
+insert $$return;
+insert "X6226Y-127\n";
+call rep "X-127Y0\n", 4;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 19;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 18;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 5;
+insert $$return;
+insert "X6226Y30545\n";
+call rep "X-127Y0\n", 4;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 19;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 18;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 5;
+insert $$return;
+insert "X6226Y-127\n";
+call rep "X-127Y0\n", 4;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 19;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 18;
+insert $$return;
+insert "X-128Y0\n";
+call rep "X-127Y0\n", 5;
+insert $$return;
+insert "G80\n";
+insert "X-16395Y-15146\n";
+call rep " ", 40;
+insert $$return + "\n";
+return;
+
+//-------------------------------------------------------//
+// インピーダンスクーポン                                //
+//-------------------------------------------------------//
+tou_znc:
+insert "G81\n";
+insert "X2400Y-15204\n";
+insert "X0Y-254\n";
+insert "X254Y0\n";
+insert "X0Y254\n";
+insert "X9144Y0\n";
+insert "X0Y-254\n";
+insert "X254Y0\n";
+insert "X0Y254\n";
+insert "X15912Y0\n";
+insert "X0Y-254\n";
+insert "X254Y0\n";
+insert "X0Y254\n";
+insert "X9144Y0\n";
+insert "X0Y-254\n";
+insert "X254Y0\n";
+insert "X0Y254\n";
+insert "X0Y30408\n";
+insert "X0Y254\n";
+insert "X-254Y0\n";
+insert "X0Y-254\n";
+insert "X-9144Y0\n";
+insert "X0Y254\n";
+insert "X-254Y0\n";
+insert "X0Y-254\n";
+insert "X-15912Y0\n";
+insert "X0Y254\n";
+insert "X-254Y0\n";
+insert "X0Y-254\n";
+insert "X-9144Y0\n";
+insert "X0Y254\n";
+insert "X-254Y0\n";
+insert "X0Y-254\n";
+insert "G80\n";
+insert "X-2400Y-15204\n";
+call rep " ", 40;
+insert $$return + "\n";
+return;
+
+//-------------------------------------------------------//
+// stringsをn個返す                                      //
+//-------------------------------------------------------//
+rep:
+	while(##2 > 0) {
+		$$str = $$str + $$1;
+		##2 = ##2 - 1;
+	}
+	return $$str;
+
+//-------------------------------------------------------//
+// 終了処理                                              //
+//-------------------------------------------------------//
+end:
+	title 0;
+	freedll;
+	endmacro;

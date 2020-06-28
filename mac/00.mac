@@ -1,0 +1,72 @@
+//-------------------------------------------------------//
+// NC Data 0-Check Macro Ver0.12                         //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Oct 19, 1999                                 //
+// Revised: May 18, 2001                                 //
+//-------------------------------------------------------//
+
+// 田楽DLLのロード
+freedll;
+loaddll (hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+$tmp = getenv("temp") + "\\00.tmp";
+#a = dllfunc("REMOVE", $tmp); // テンポラリを削除しておく
+freedll;
+
+disableinvert;
+disabledraw;
+if (selecting == 0) selectall;
+#Total = selendy - seltopy;
+copy;
+openfile $tmp;
+disabledraw;
+
+// openfile "/h" したので再度, 田楽DLLのロード
+freedll;
+loaddll (hidemarudir + "\\DengakuDLL.dll");
+if (!result) {
+	message "DLL をロードできませんでした。";
+	endmacro;
+}
+
+#absx = 0;
+#absy = 0;
+#Parsent = 0;
+#i = 1;
+title "処理中．．．0 %";
+beginclipboardread;
+$a = getclipboard;
+while ($a != "") {
+	if ((#i * 100) / #Total > #Parsent) {
+		title "処理中．．．" + str(#Parsent) + " %";
+		#Parsent = #Parsent + 1;
+	}
+	#i = #i + 1;
+	$token = dllfuncstr("GETTOKEN", $a, "XY");
+	#n = dllfunc("HASMORETOKENS");
+	if (#n == 0)
+		insert $token;
+	else {
+		// Xを取り出す
+		$token = dllfuncstr("GETTOKEN","","XY");
+		#absx = #absx + val($token);
+		insert "X" + str(#absx);
+		// Yを取り出す
+		$token = dllfuncstr("GETTOKEN","","XY");
+		#absy = #absy + val($token);
+		insert "Y" + str(#absy) + "\n";
+	}
+	$a = getclipboard;
+}
+title "処理中．．．0 %";
+
+config "m-";
+save;
+//gofiletop;
+browsemodeswitch;
+freedll;
+endmacro;

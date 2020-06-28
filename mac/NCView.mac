@@ -1,0 +1,14 @@
+//-------------------------------------------------------//
+// NCView.mac -- NCView Wrapper Macro Ver0.1             //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: Apr 03, 2001                                 //
+// Revised: May 23, 2001                                 //
+//-------------------------------------------------------//
+
+// "NCView"の実行ファイル名
+$NCViewCmd = "c:\\Program Files\\NC_Programs\\NCView.exe";
+
+if (updated == 1) save;
+run $NCViewCmd + " " + filename2;
+exit;

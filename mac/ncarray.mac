@@ -1,0 +1,14 @@
+//-------------------------------------------------------//
+// NCView.mac -- NCArray Wrapper Macro Ver0.1             //
+//                                                       //
+// Author:  WATABE Eiji                                  //
+// Created: May 23, 2001                                 //
+// Revised: May 23, 2001                                 //
+//-------------------------------------------------------//
+
+// "NCArray"の実行ファイル名
+$NCArrayCmd = "c:\\Program Files\\NC_Programs\\NCArray.exe";
+
+if (updated == 1) save;
+run $NCArrayCmd + " " + filename2;
+exit;
